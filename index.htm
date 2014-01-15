@@ -1,0 +1,96 @@
+<html>
+<head>
+<script src="./jquery.js"></script>
+<script src="./underscore.js"></script>
+<script src="./backbone.js"></script>
+<script src="./family-data.js"></script>
+<title>The Gottneb Family</title>
+<LINK REL="StyleSheet" HREF="./bootstrap.css" TYPE="text/css">
+<LINK REL="StyleSheet" HREF="./style.css" TYPE="text/css">
+<script type="text/javascript">
+
+var app;
+var router = Backbone.Router.extend({
+  routes: {
+    '': 'home',
+    'bios/:name':'loadBio'
+  },
+  initialize: function(){
+    var familyMembers = new FamilyData();
+    familyMembers.reset(familyData);
+    this.homeView = new homeView({ collection: familyMembers });
+    this.bioView = new bioView({ collection: familyMembers });
+  },
+  home: function(){
+    this.homeView.render();
+  },
+  loadBio: function(memberName){
+    this.bioView.render(memberName);
+  }
+});
+
+var homeView = Backbone.View.extend({
+  el: 'body',
+  die: '.sectionA',
+  fore: '.sectionB',
+  love: '.sectionC',
+  template: _.template('<h1>The Gottnebs of Voltzgrad</h1><div class="row"><div class="sectionA"></div></div>\
+    <div class="row"><div class="sectionB"></div></div><div class="row"><div class="sectionC"></div></div>'),
+  render: function(){
+    this.$el.html('');
+    this.$el.html(this.template());
+    this.collection.each(function(member) {
+      var memberSubView = new memberTreeView({ model: member });
+      memberSubView.render();
+      if( member.attributes.gen[0]==='a' ) {
+        this.$el.find(this.die).append(memberSubView.$el);
+      }
+      else if( member.attributes.gen[0] ==='b' ) {
+        this.$el.find(this.fore).append(memberSubView.$el);
+      } else { this.$el.find(this.love).append(memberSubView.$el); }
+    }, this);
+  }
+})
+
+var memberTreeView = Backbone.View.extend({
+  tagName:'div',
+  template: _.template('<div class="boxy" id="<%= gen %>">\
+    <%= name %></div>'),
+
+  events: {
+    'click .boxy' : 'memberBio'
+  },
+
+  render: function(){
+    this.$el.html(this.template(this.model.attributes));
+  },
+  memberBio: function(){
+    var mem = this.model.attributes;
+    app.navigate('#bios/'+mem.name, {trigger: true});
+  }
+});
+
+var FamilyData = Backbone.Collection.extend({});
+
+var bioView = Backbone.View.extend({
+  template: _.template('<h1><%= attributes.name %></h1><h2><%= attributes.life %></h2><p class="history"><%= attributes.history %></p>\
+    <a href="index.htm">BACK</a>'),
+  render: function(memberName){
+    var biomodel = this.collection.where({
+      name: memberName
+    })[0];
+    var bioHtml = this.template(biomodel);
+    $('body').html(bioHtml);
+  }
+});
+
+$(document).ready(function(){
+  app = new router;
+  Backbone.history.start();
+})
+
+</script>
+</head>
+
+
+</html>
